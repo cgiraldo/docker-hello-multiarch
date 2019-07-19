@@ -74,7 +74,11 @@ docker manifest annotate hello:latest hello:latest-arm32v6 --os linux --arch arm
 docker manifest annotate hello:latest hello:latest-arm64v8 --os linux --arch arm64
 ```
 
-docker-cli provides a command to update the multiarch manifest to dockerhub with docker manifest push MANIFEST_NAME
+docker-cli provides a command to update the multiarch manifest to dockerhub with:
+
+```
+docker manifest push hello:latest
+```
 
 
 References:

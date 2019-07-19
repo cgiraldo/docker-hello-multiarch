@@ -7,16 +7,26 @@ mkdir ~/.docker
 echo '{"auths": '$DOCKERCFG',"experimental":"enabled"}' > ~/.docker/config.json
 # Check if all arch images are in dockerhub
 VIRTUAL_IMAGE=$(echo "${IMAGE_NAME}" | rev | cut -d- -f2- | rev )
-echo "checking if ${VIRTUAL_IMAGE}-amd64 Manifest exists"
-./docker-cli manifest inspect ${VIRTUAL_IMAGE}-amd64 || exit 0
-echo "checking if ${VIRTUAL_IMAGE}-arm32v6 Manifest exists"
-./docker-cli manifest inspect ${VIRTUAL_IMAGE}-arm32v6 || exit 0
-echo "checking if ${VIRTUAL_IMAGE}-arm64v8 Manifest exists"
-./docker-cli manifest inspect ${VIRTUAL_IMAGE}-arm64v8 || exit 0
 
-echo "All arch variants exist. Creating multiarch manifest"
-./docker-cli manifest create $VIRTUAL_IMAGE $VIRTUAL_IMAGE-amd64 $VIRTUAL_IMAGE-arm32v6 $VIRTUAL_IMAGE-arm64v8
-./docker-cli manifest annotate $VIRTUAL_IMAGE $VIRTUAL_IMAGE-arm32v6 --os linux --arch arm
-./docker-cli manifest annotate $VIRTUAL_IMAGE $VIRTUAL_IMAGE-arm64v8 --os linux --arch arm64
+AMD64_IMAGE="$VIRTUAL_IMAGE-amd64"
+ARM64_IMAGE="$VIRTUAL_IMAGE-arm64v8"
+ARM32_IMAGE="$VIRTUAL_IMAGE-arm32v6"
+
+echo "checking if ${AMD64_IMAGE} Manifest exists"
+if ! ./docker-cli manifest inspect ${AMD64_IMAGE}; then AMD64_IMAGE='' ; fi
+echo "checking if ${ARM32_IMAGE} Manifest exists"
+if ! ./docker-cli manifest inspect ${ARM32_IMAGE}; then ARM32_IMAGE='' ; fi
+echo "checking if ${ARM64_IMAGE} Manifest exists"
+if ! ./docker-cli manifest inspect ${ARM64_IMAGE}; then ARM64_IMAGE='' ; fi
+
+echo "Creating multiarch manifest"
+./docker-cli manifest create $VIRTUAL_IMAGE $AMD64_IMAGE $ARM32_IMAGE $ARM64_IMAGE
+if [ -n "${ARM32_IMAGE}" ]; then
+  ./docker-cli manifest annotate $VIRTUAL_IMAGE $ARM32_IMAGE --os linux --arch arm
+fi
+if [ -n "${ARM64_IMAGE}" ]; then
+./docker-cli manifest annotate $VIRTUAL_IMAGE $ARM64_IMAGE --os linux --arch arm64
+fi
 ./docker-cli manifest push $VIRTUAL_IMAGE
+
 rm -r docker-cli ~/.docker
